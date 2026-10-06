@@ -2,72 +2,52 @@
 
 # 频谱可视化 · foo_spectrum
 
-给 foobar2000 用的频谱面板。最多 1024 段，颜色、渐变、刻度位置都能自己配，帧率上限 240。
+foobar2000 的频谱面板。最多 1024 段，渐变、颜色、刻度位置都能自己配，帧率上限 240。
+500 Hz 以下单独走一路 16384 点长窗 FFT，低频不会糊成一片。
 
-## 预览
+[![Stars](https://img.shields.io/github/stars/HarumiEna/foo_spectrum?style=flat-square&label=Stars&color=blue)](https://github.com/HarumiEna/foo_spectrum/stargazers) [![Forks](https://img.shields.io/github/forks/HarumiEna/foo_spectrum?style=flat-square&label=Forks&color=blue)](https://github.com/HarumiEna/foo_spectrum/forks) [![Downloads](https://img.shields.io/github/downloads/HarumiEna/foo_spectrum/total?style=flat-square&label=Downloads&color=green)](https://github.com/HarumiEna/foo_spectrum/releases)
 
-**经典配色**（默认）—— 三色垂直渐变，每根柱子从下往上绿→黄→红，顶上那条白线是峰值保持。
-
-![经典配色，垂直三色渐变与峰值保持](screenshots/01-classic.png)
-
-**刻度与网格** —— 频率轴在下方、电平轴在左侧，dB 刻度与柱顶严格对齐。
-
-![频率刻度在下方、电平刻度在左侧，含水平参考线](screenshots/02-scales.png)
-
-**彩虹渐变** —— 频率轴挪到上方，1024 段，刻度位置和配色都可以换。
-
-![彩虹渐变，频率刻度在上方，1024 段](screenshots/03-rainbow.png)
-
-**低频放大** —— 频率范围填 20–200 Hz，256 根柱子全部用来画低频。
-
-![只显示 20–200 Hz 的低频放大视图](screenshots/04-bass-zoom.png)
+![经典配色](foo_spectrum/screenshots/01-classic.png)
+![刻度与网格](foo_spectrum/screenshots/02-scales.png)
+![彩虹渐变](foo_spectrum/screenshots/03-rainbow.png)
+![低频放大](foo_spectrum/screenshots/04-bass-zoom.png)
+![全局预览](foo_spectrum/screenshots/img_ffbc732a02d95b78.png)
 
 ## 安装
 
-1. 打开参数设置
-2. 左边选「组件」
-3. 点「安装…」，选中 `foo_spectrum.fb2k-component`
-4. 列表里会出现「频谱可视化 (Spectrum Visualizer)」，标着需要重启
-5. 点「应用」，按提示重启 foobar2000
+参数设置（`Ctrl+P`）→ 组件 → 安装… → 选中 `.fb2k-component` → 应用 → 按提示重启。
 
-升级也一样，直接「安装…」选新版本覆盖即可，不用先卸载，也不用自己找目录。
+不能双击安装：foobar2000 默认不注册 `.fb2k-component` 关联，双击多半被解压软件接走。
+升级同理，直接安装覆盖，不用先卸载。
 
-## 打开面板
+## 使用
 
-菜单 `视图 → 可视化 → 频谱可视化`。双击全屏。
+菜单 `视图 → 可视化 → 频谱可视化`，双击全屏。想让它常驻成面板：启用布局编辑模式后
+右键面板 → `替换 UI 元素…` → 选「频谱可视化」。
 
-想让它常驻成一块面板：`视图 → 布局 → 启用布局编辑模式`，右键一个面板选
-`替换 UI 元素…`，再选「频谱可视化」。
+面板右键三项：`设置面板…`（分析 / 显示 / 柱体动态 / 刻度）、`颜色设置…`、`高级设置…`。
 
-面板上单击右键有三个入口：
+## 设置
 
-- `设置面板…` —— 分析、显示、柱体动态、刻度
-- `颜色设置…` —— 所有配色相关的操作
-- `高级设置…` —— 跳到 `参数设置 → 高级` 里对应的分支
+设置面板里每项鼠标悬停都有详细说明。默认值：
+
+| 设置 | 默认 | 设置 | 默认 |
+| --- | --- | --- | --- |
+| 波段数量 | 256（64–1024） | 刷新率 | 60 FPS |
+| FFT 点数 | 自动 | 上升 / 下落时间 | 0 / 90 ms |
+| 频率范围 | 20–20000 Hz | 峰值下落 | 60 %/s |
+| 显示样式 | 柱状 + 峰值保持 | 增益 | 100 % |
+| 渐变 | 三色，垂直 | 网格 / 频率刻度 / 电平刻度 | 关 |
+
+频率上下限不是把区间外留空，而是把选中的区间放大铺满整个面板。
 
 ## 配色
 
-
-调好的配色可以存成自定义预设（最多 32 个，留空名字会自动叫「配色 N」）。
-内置 7 组：`经典绿`（下绿→中黄→上红）、`深海蓝`、`落日火焰`、`彩虹`、`霓虹紫`、
-`琥珀示波器`、`黑白`。
+面板右键 → `颜色设置…`。色块旁边标着用途；取色方式可在系统调色板和屏幕吸管之间切换；
+调好的配色能存成自定义预设（最多 32 个）。内置 7 组：经典绿 / 深海蓝 / 落日火焰 /
+彩虹 / 霓虹紫 / 琥珀示波器 / 黑白。
 
 ## 配置文件
 
-设置面板底部的「导出配置…」会把全部设置写成一份 `.ini`：
-
-```ini
-bands=256
-fps=60
-bar_fall_ms=90
-freq_min=20
-freq_max=20000
-scale_freq=1
-color.background=0A0E12
-color.bar_low=00B000
-color.bar_high=FF2000
-```
-
-能直接手改、能进版本管理、能发给别人。导入时：没写到的项保持当前值，越界值自动收到
-合法范围，`fft=0` 表示自动，颜色支持 `RRGGBB` / `#RRGGBB` / 三位缩写，
-`;` 和 `#` 开头是注释。
+设置面板底部可以把整份设置导出 / 导入成 `.ini` 文本，方便备份和分享。
+没写到的项保持当前值，越界值自动收敛到合法范围。
