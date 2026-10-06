@@ -57,7 +57,7 @@ namespace {
 		id_style, id_gradmode,
 		id_graddir, id_fps,
 		id_alpha, id_gap,
-		id_peakfall, id_gain,
+		id_peakfall, id_gain, id_slope,
 		id_freqmin, id_freqmax,
 		id_bar_rise, id_bar_fall,
 		// checkboxes
@@ -155,6 +155,12 @@ namespace {
 
 		HWND mk_edit(int id, int x, int y, int w) {
 			return mk(L"EDIT", L"", WS_BORDER | ES_AUTOHSCROLL | ES_NUMBER, x, y, w, kCtlH, id);
+		}
+
+		//! Same as mk_edit() but without ES_NUMBER, so a minus sign can be typed.
+		//! Used by the spectral tilt, which is the only signed field.
+		HWND mk_edit_signed(int id, int x, int y, int w) {
+			return mk(L"EDIT", L"", WS_BORDER | ES_AUTOHSCROLL, x, y, w, kCtlH, id);
 		}
 
 		HWND mk_combo(int id, int x, int y, int w) {
@@ -281,7 +287,15 @@ namespace {
 				mk_label(L"Hz", xunit2, y, kUnitW);
 
 				y += kRowH;
-				add_tip(mk_check(id_lowboost, L"低频增强", xlab1, y, 300),
+				add_tip(mk_label(L"频谱倾斜", xlab1, y, kLabelW), "以 1 kHz 为轴心，每倍频程抬高或压低多少 dB。");
+				add_tip(mk_edit_signed(id_slope, xctl1, y, wNum),
+					"频谱倾斜，单位 dB/倍频程，以 1 kHz 为轴心（−12 ~ +12）。\n"
+					"音乐能量天然每倍频程衰减约 6 dB，所以高频柱子天生就矮。填正值把高频抬起来，"
+					"整条曲线就平了；填负值反过来强调低频。\n"
+					"常用范围是 ±6：再大就会把某一段顶出显示范围。\n"
+					"注意它和「增益」不同 —— 增益是全频段统一乘，改不了斜率。");
+				mk_label(L"dB/oct", xunit1, y, kUnitW);
+				add_tip(mk_check(id_lowboost, L"低频增强", xlab2, y, 180),
 					"低于 500 Hz 的频段改用 16384 点长窗分析，高频仍用短窗。低频分辨率约提高 4 倍，而高频瞬态不受影响。关掉可省一次 FFT 计算。");
 			}
 			gy += kGroupH3 + kGroupGap;
@@ -452,6 +466,7 @@ namespace {
 			set_edit_int(id_gap, (int)s.gap);
 			set_edit_int(id_peakfall, (int)s.peak_fall);
 			set_edit_int(id_gain, (int)s.gain);
+			set_edit_int(id_slope, s.slope_db_per_oct);
 			set_edit_int(id_freqmin, (int)s.freq_min);
 			set_edit_int(id_freqmax, (int)s.freq_max);
 			set_edit_int(id_bar_rise, (int)s.bar_rise_ms);
@@ -486,6 +501,8 @@ namespace {
 			s.gap = (unsigned)get_edit_int(id_gap);
 			s.peak_fall = (unsigned)get_edit_int(id_peakfall);
 			s.gain = (unsigned)get_edit_int(id_gain);
+			// Signed: the tilt can be negative.
+			s.slope_db_per_oct = get_edit_int(id_slope);
 			s.freq_min = (unsigned)get_edit_int(id_freqmin);
 			s.freq_max = (unsigned)get_edit_int(id_freqmax);
 			s.bar_rise_ms = (unsigned)get_edit_int(id_bar_rise);

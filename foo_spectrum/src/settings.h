@@ -56,6 +56,10 @@ struct t_spectrum_settings {
 	unsigned bar_rise_ms   = 0;     // bar attack time constant, ms; 0 = follow the signal instantly
 	unsigned bar_fall_ms   = 90;    // bar release time constant, ms; 0 = drop instantly
 	unsigned gain          = 100;   // amplitude gain, percent
+	//! Spectral tilt in dB per octave, pivoted at 1 kHz. Music falls off by
+	//! roughly 6 dB/octave, so a positive value flattens the display instead of
+	//! letting the whole high end sink to the bottom. Negative lifts the bass.
+	int slope_db_per_oct   = 0;
 	unsigned gradient_mode = 0;     // 0 = three-colour gradient, 1 = rainbow sweep
 	unsigned gradient_dir  = gradient_vertical; // see t_gradient_dir
 	unsigned fft           = 0;     // FFT size; 0 = pick automatically from band count
@@ -106,16 +110,22 @@ unsigned spectrum_settings_preset_count();
 const char * spectrum_settings_preset_name(unsigned index);
 void spectrum_settings_apply_preset(unsigned index);
 
-// --- user colour presets ---------------------------------------------------
-//! Colour sets saved by the user, kept in the component's own configuration
-//! (not exposed in Advanced Preferences). Limited to 32 entries.
+// --- user appearance presets -----------------------------------------------
+//! Appearance presets saved by the user, kept in the component's own
+//! configuration (not exposed in Advanced Preferences). Limited to 32 entries.
+//!
+//! Unlike the built-in presets - which only carry colours and the gradient - a
+//! user preset stores the whole appearance: colours, bar style, opacity, bar
+//! gap, gradient mode/direction, dB scale, log axis, grid, both scale positions
+//! and the spectral tilt. A preset applies exactly the fields it contains, so
+//! presets written by older versions keep working.
 unsigned spectrum_user_preset_count();
 //! @returns the preset's name, or "" when the index is out of range.
 //! The returned pointer stays valid until the next call - copy it if needed.
 const char * spectrum_user_preset_name(unsigned index);
-//! Applies a user preset's colours and gradient settings.
+//! Applies everything the preset stores.
 bool spectrum_user_preset_apply(unsigned index);
-//! Saves the *current* colours under `name`; an existing name is overwritten.
+//! Saves the *current* appearance under `name`; an existing name is overwritten.
 //! @returns false when the name is empty or the list is full.
 bool spectrum_user_preset_save(const char * name);
 //! Removes a user preset.

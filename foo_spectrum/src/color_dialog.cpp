@@ -263,12 +263,15 @@ namespace {
 		void build_preset_group() {
 			const int gy = kPresetGroupY;
 			const int listY = gy + kCaptionH;
-			add_card(kPad, gy, kGrpW, kPresetGroupH, L"配色预设（内置在前，自定义在后）");
+			add_card(kPad, gy, kGrpW, kPresetGroupH, L"外观预设（内置在前，自定义在后）");
 
 			HWND list = mk(L"LISTBOX", L"",
 				WS_BORDER | WS_VSCROLL | LBS_NOTIFY | WS_TABSTOP,
 				kPad + 12, listY, kListW, kListH, id_presets);
-			add_tip(list, "内置预设来自程序，自定义预设是你自己保存的配色。\n双击一项即可套用；选中后也可以用右侧的「应用所选」。");
+			add_tip(list, "内置预设只套用配色（颜色 + 渐变模式与方向）。\n"
+				"自定义预设套用整套外观：颜色、显示样式、不透明度、柱间空隙、渐变、dB 刻度、\n"
+				"对数轴、网格、两个刻度的位置，以及频谱倾斜。\n"
+				"双击一项即可套用；选中后也可以用右侧的「应用所选」。");
 
 			const int rx = kPad + 234;
 			const int rw = kGrpW - 234 - 12;
@@ -284,8 +287,11 @@ namespace {
 			add_tip(mk_button(id_delete, L"删除", rx + rw - 96, btnY, 96, kBtnH, false),
 				"删除选中的自定义预设。内置预设不能删除。");
 
-			add_tip(mk_button(id_save, L"保存当前配色为预设", rx, btnY + kBtnH + 8, rw, kBtnH, false),
-				"把频谱面板当前正在使用的配色，连同渐变模式与方向，保存成一个自定义预设（最多 32 个）。");
+			add_tip(mk_button(id_save, L"保存当前外观为预设", rx, btnY + kBtnH + 8, rw, kBtnH, false),
+				"把频谱面板当前正在使用的整套外观保存成一个自定义预设（最多 32 个）：\n"
+				"背景与渐变三色、峰值 / 网格 / 刻度颜色、显示样式、不透明度、柱间空隙、\n"
+				"渐变模式与方向、dB 刻度、对数频率轴、网格开关、两个刻度的位置，以及频谱倾斜。\n"
+				"不包含波段数量、FFT 点数、频率范围、刷新率、增益、柱体动态这类与分析或性能相关的设置。");
 		}
 
 		// --- preset list ------------------------------------------------------

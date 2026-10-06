@@ -732,6 +732,7 @@ namespace {
 			if (srate <= 0.0) srate = 44100.0;
 			const double nyquist = srate * 0.5;
 			const float gain = (float)m_settings.gain / 100.0f;
+			const float slopeDbPerOct = (float)m_settings.slope_db_per_oct;
 
 			// Displayed frequency range. Bands outside it are simply not drawn,
 			// and the selected span is stretched across the whole panel width -
@@ -775,6 +776,16 @@ namespace {
 					useLow ? lowChannels : channels,
 					lo, hi, nyquist);
 				level *= gain;
+
+				// Spectral tilt: a frequency-dependent gain pivoted at 1 kHz,
+				// applied before the dB mapping. Music naturally falls off by
+				// roughly 6 dB/octave, so without this the whole high end sits at
+				// the bottom of the display no matter how the broadband gain is
+				// set - gain cannot fix a slope.
+				if (slopeDbPerOct != 0.0f && centre > 0.0) {
+					const float octaves = log2f((float)centre / 1000.0f);
+					level *= powf(10.0f, (slopeDbPerOct * octaves) / 20.0f);
+				}
 
 				if (m_settings.db_scale) {
 					const float db = 20.0f * log10f(level > 1.0e-5f ? level : 1.0e-5f);

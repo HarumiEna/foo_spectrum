@@ -18,9 +18,12 @@ namespace {
 	static constexpr GUID guid_fps         = { 0x5fb28e96, 0xa071, 0x43c4, { 0xe5, 0xf6, 0x70, 0x81, 0x92, 0xa3, 0xb4, 0xc5 } };
 	static constexpr GUID guid_gap         = { 0x60c39fa7, 0xb182, 0x44d5, { 0xf6, 0x07, 0x81, 0x92, 0xa3, 0xb4, 0xc5, 0xd6 } };
 	static constexpr GUID guid_peakfall    = { 0x71d4a0b8, 0xc293, 0x45e6, { 0x07, 0x18, 0x92, 0xa3, 0xb4, 0xc5, 0xd6, 0xe7 } };
-	static constexpr GUID guid_bar_rise    = { 0x93f6c2da, 0xe4b5, 0x4708, { 0x29, 0x3a, 0xb4, 0xc5, 0xd6, 0xe7, 0xf8, 0x09 } };
-	static constexpr GUID guid_bar_fall    = { 0xa407d3eb, 0xf5c6, 0x4819, { 0x3a, 0x4b, 0xc5, 0xd6, 0xe7, 0xf8, 0x09, 0x1a } };
+	// 注意：这两个 GUID 以前和 guid_dbscale / guid_logfreq 是同一组值（重复），
+	// 已改成 000d / 000e。存储用的是下面的 ASCII 键名，所以值不会丢。
+	static constexpr GUID guid_bar_rise    = { 0xa1b2c3d4, 0x000d, 0x4a01, { 0x90, 0x0d, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66 } };
+	static constexpr GUID guid_bar_fall    = { 0xa1b2c3d4, 0x000e, 0x4a01, { 0x90, 0x0e, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66 } };
 	static constexpr GUID guid_gain        = { 0x82e5b1c9, 0xd3a4, 0x46f7, { 0x18, 0x29, 0xa3, 0xb4, 0xc5, 0xd6, 0xe7, 0xf8 } };
+	static constexpr GUID guid_slope       = { 0xa1b2c3d4, 0x000c, 0x4a01, { 0x90, 0x0c, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66 } };
 	static constexpr GUID guid_dbscale     = { 0x93f6c2da, 0xe4b5, 0x4708, { 0x29, 0x3a, 0xb4, 0xc5, 0xd6, 0xe7, 0xf8, 0x09 } };
 	static constexpr GUID guid_logfreq     = { 0xa407d3eb, 0xf5c6, 0x4819, { 0x3a, 0x4b, 0xc5, 0xd6, 0xe7, 0xf8, 0x09, 0x1a } };
 	static constexpr GUID guid_grid        = { 0xb518e4fc, 0x06d7, 0x492a, { 0x4b, 0x5c, 0xd6, 0xe7, 0xf8, 0x09, 0x1a, 0x2b } };
@@ -81,6 +84,13 @@ namespace {
 	static advconfig_integer_factory g_gain(
 		"增益 (%)", "foo_spectrum.gain",
 		guid_gain, guid_branch, 0.6, 100, 1, 400);
+
+	// 频谱倾斜：以 1 kHz 为轴心，每倍频程抬高（正）或压低（负）多少 dB。
+	// 音乐自然衰减约 6 dB/倍频程，所以 +4～+6 就能把整条曲线掰平。
+	// 用有符号版本，负值可以反过来强调低频。
+	static advconfig_signed_integer_factory g_slope(
+		"频谱倾斜 (dB/oct)", "foo_spectrum.slope",
+		guid_slope, guid_branch, 0.65, 0, -12, 12);
 
 	static advconfig_checkbox_factory g_dbscale(
 		"dB 刻度", "foo_spectrum.dbscale",
@@ -313,6 +323,8 @@ static void normalize_settings(t_spectrum_settings & s) {
 	if (s.scale_level_pos > 2) s.scale_level_pos = 2;
 	if (s.gain < 1) s.gain = 1;
 	if (s.gain > 400) s.gain = 400;
+	if (s.slope_db_per_oct < -12) s.slope_db_per_oct = -12;
+	if (s.slope_db_per_oct > 12) s.slope_db_per_oct = 12;
 	if (s.gradient_mode > 1) s.gradient_mode = 1;
 	if (s.gradient_dir > 2) s.gradient_dir = 2;
 	// 0 = auto; anything else must be a power of two within the supported range.
@@ -340,6 +352,7 @@ t_spectrum_settings spectrum_settings_load() {
 	s.bar_rise_ms   = (unsigned)g_bar_rise.get();
 	s.bar_fall_ms   = (unsigned)g_bar_fall.get();
 	s.gain          = (unsigned)g_gain.get();
+	s.slope_db_per_oct = (int)g_slope.get();
 	s.gradient_mode = (unsigned)g_gradmode.get();
 	s.gradient_dir  = (unsigned)g_graddir.get();
 	s.fft           = (unsigned)g_fft.get();
@@ -377,6 +390,7 @@ void spectrum_settings_save(const t_spectrum_settings & in) {
 	g_bar_rise.set(s.bar_rise_ms);
 	g_bar_fall.set(s.bar_fall_ms);
 	g_gain.set(s.gain);
+	g_slope.set(s.slope_db_per_oct);
 	g_gradmode.set(s.gradient_mode);
 	g_graddir.set(s.gradient_dir);
 	g_fft.set(s.fft);
@@ -504,6 +518,7 @@ pfc::string8 spectrum_settings_serialize() {
 	append_num(out, "bar_rise_ms", (int)s.bar_rise_ms);
 	append_num(out, "bar_fall_ms", (int)s.bar_fall_ms);
 	append_num(out, "gain", (int)s.gain);
+	append_num(out, "slope", s.slope_db_per_oct);
 	append_num(out, "gradient_mode", (int)s.gradient_mode);
 	append_num(out, "gradient_dir", (int)s.gradient_dir);
 	append_num(out, "fft", (int)s.fft);
@@ -576,6 +591,8 @@ bool spectrum_settings_deserialize(const char * text, pfc::string8 & error) {
 		else if (key_equals(k, "bar_rise_ms"))   { s.bar_rise_ms = (unsigned)num; sawAny = true; }
 		else if (key_equals(k, "bar_fall_ms"))   { s.bar_fall_ms = (unsigned)num; sawAny = true; }
 		else if (key_equals(k, "gain"))          { s.gain = (unsigned)num; sawAny = true; }
+		// 倾斜可以是负数，所以不能用上面那个已经钳到 0 的 num。
+		else if (key_equals(k, "slope"))         { s.slope_db_per_oct = parse_int(val.get_ptr()); sawAny = true; }
 		else if (key_equals(k, "gradient_mode")) { s.gradient_mode = (unsigned)num; sawAny = true; }
 		else if (key_equals(k, "gradient_dir"))  { s.gradient_dir = (unsigned)num; sawAny = true; }
 		else if (key_equals(k, "fft"))           { s.fft = (unsigned)num; sawAny = true; }
@@ -607,20 +624,31 @@ bool spectrum_settings_deserialize(const char * text, pfc::string8 & error) {
 }
 
 // ---------------------------------------------------------------------------
-// 用户自定义配色预设
+// 用户自定义外观预设
 //
 // 存在组件自己的 cfg_string 里 —— 它在配置文件中有自己的条目，但**不会**
 // 出现在高级参数列表中，所以不用担心用户误改到内部格式。
 // 每行一个预设，字段用 '|' 分隔：
-//   name|bg|low|mid|high|peak|grid|scale|gradient_mode|gradient_dir
+//   name|bg|low|mid|high|peak|gridcolor|scalecolor          (0..7, 老格式到此为止)
+//   |gradient_mode|gradient_dir|style|alpha|gap              (8..12)
+//   |db_scale|log_freq|grid_on|scale_freq|scale_level|slope  (13..18)
+//
+// 老版本只写前 10 个字段，解析时"读到几个就套用几个"，所以旧预设仍然有效。
 // ---------------------------------------------------------------------------
 namespace {
 
-	enum { kMaxUserPresets = 32 };
+	enum { kMaxUserPresets = 32, kPresetFields = 19 };
 
 	struct t_user_preset {
 		pfc::string8 name, bg, low, mid, high, peak, grid, scale;
 		unsigned gmode = 0, gdir = 1;
+		//! How many '|'-separated fields the line actually had. Everything past
+		//! field 9 is optional and only applied when present.
+		unsigned fields = 0;
+		unsigned style = 1, alpha = 255, gap = 1;
+		bool dbScale = true, logFreq = true, gridOn = false;
+		unsigned scaleFreq = 0, scaleLevel = 0;
+		int slope = 0;
 	};
 
 	bool preset_line_at(unsigned index, pfc::string8 & out) {
@@ -642,10 +670,10 @@ namespace {
 	}
 
 	bool parse_preset_line(const char * line, t_user_preset & out) {
-		pfc::string8 f[10];
+		pfc::string8 f[kPresetFields];
 		unsigned n = 0;
 		const char * p = line;
-		while (n < 10) {
+		while (n < (unsigned)kPresetFields) {
 			const char * e = p;
 			while (*e != 0 && *e != '|') ++e;
 			f[n].set_string(p, (t_size)(e - p));
@@ -653,8 +681,9 @@ namespace {
 			if (*e == 0) break;
 			p = e + 1;
 		}
-		if (n < 10) return false;
+		if (n < 10) return false; // 老格式的最小长度
 
+		out.fields = n;
 		out.name  = f[0].get_ptr();
 		out.bg    = f[1].get_ptr();
 		out.low   = f[2].get_ptr();
@@ -665,6 +694,16 @@ namespace {
 		out.scale = f[7].get_ptr();
 		out.gmode = (unsigned)parse_int(f[8].get_ptr());
 		out.gdir  = (unsigned)parse_int(f[9].get_ptr());
+
+		if (n > 10) out.style      = (unsigned)parse_int(f[10].get_ptr());
+		if (n > 11) out.alpha      = (unsigned)parse_int(f[11].get_ptr());
+		if (n > 12) out.gap        = (unsigned)parse_int(f[12].get_ptr());
+		if (n > 13) out.dbScale    = parse_int(f[13].get_ptr()) != 0;
+		if (n > 14) out.logFreq    = parse_int(f[14].get_ptr()) != 0;
+		if (n > 15) out.gridOn     = parse_int(f[15].get_ptr()) != 0;
+		if (n > 16) out.scaleFreq  = (unsigned)parse_int(f[16].get_ptr());
+		if (n > 17) out.scaleLevel = (unsigned)parse_int(f[17].get_ptr());
+		if (n > 18) out.slope      = parse_int(f[18].get_ptr());
 		return !out.name.is_empty();
 	}
 
@@ -679,8 +718,13 @@ namespace {
 		line += color_to_text(s.colors.peak).get_ptr();       line += "|";
 		line += color_to_text(s.colors.grid).get_ptr();       line += "|";
 		line += color_to_text(s.colors.scale).get_ptr();      line += "|";
-		char buf[32];
-		wsprintfA(buf, "%u|%u", s.gradient_mode, s.gradient_dir);
+		char buf[160];
+		wsprintfA(buf, "%u|%u|%u|%u|%u|%d|%d|%d|%u|%u|%d",
+			s.gradient_mode, s.gradient_dir,
+			s.style, s.alpha, s.gap,
+			s.db_scale ? 1 : 0, s.log_freq ? 1 : 0, s.grid ? 1 : 0,
+			s.scale_freq_pos, s.scale_level_pos,
+			s.slope_db_per_oct);
 		line += buf;
 		return line;
 	}
@@ -724,6 +768,7 @@ bool spectrum_user_preset_apply(unsigned index) {
 	if (!preset_line_at(index, line)) return false;
 	if (!parse_preset_line(line.get_ptr(), p)) return false;
 
+	// 配色与渐变：所有格式都有。
 	g_col_bg.set(p.bg.get_ptr());
 	g_col_low.set(p.low.get_ptr());
 	g_col_mid.set(p.mid.get_ptr());
@@ -733,6 +778,18 @@ bool spectrum_user_preset_apply(unsigned index) {
 	g_col_scale.set(p.scale.get_ptr());
 	g_gradmode.set(p.gmode);
 	g_graddir.set(p.gdir);
+
+	// 完整外观：只有写过的字段才套用，所以老预设不会把样式重置成默认值。
+	// 各 advconfig 工厂会按自己的 min/max 钳位。
+	if (p.fields > 10) g_style.set(p.style);
+	if (p.fields > 11) g_alpha.set(p.alpha);
+	if (p.fields > 12) g_gap.set(p.gap);
+	if (p.fields > 13) g_dbscale.set(p.dbScale);
+	if (p.fields > 14) g_logfreq.set(p.logFreq);
+	if (p.fields > 15) g_grid.set(p.gridOn);
+	if (p.fields > 16) g_scale_freq.set(p.scaleFreq);
+	if (p.fields > 17) g_scale_level.set(p.scaleLevel);
+	if (p.fields > 18) g_slope.set(p.slope);
 	return true;
 }
 
