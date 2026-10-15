@@ -2,6 +2,7 @@
 #include "settings.h"
 #include "settings_dialog.h"
 #include "color_dialog.h"
+#include "spectrogram_dialog.h"
 
 #include <libPPUI/win32_op.h>     // WIN32_OP()
 #include <helpers/atl-misc.h>     // ui_element_impl<>
@@ -45,6 +46,7 @@ namespace {
 	enum {
 		kCmdSettingsPanel = 890,
 		kCmdColorPanel = 895,
+		kCmdSpectrogram = 892,
 		kCmdOpenSettings = 900,
 		kIdleIntervalMs = 1000,     // polling interval while the panel is hidden
 		kMinFftSize = 4096,
@@ -591,6 +593,9 @@ namespace {
 		// from one entry instead of a pile of submenus here.
 		menu.AppendMenu(MF_STRING, (UINT_PTR)kCmdSettingsPanel, _T("设置面板…"));
 		menu.AppendMenu(MF_STRING, (UINT_PTR)kCmdColorPanel, _T("颜色设置…"));
+		menu.AppendMenu(MF_SEPARATOR, (UINT_PTR)0, (LPCTSTR)NULL);
+		menu.AppendMenu(MF_STRING, (UINT_PTR)kCmdSpectrogram, _T("频谱图（判断是否无损）…"));
+		menu.AppendMenu(MF_SEPARATOR, (UINT_PTR)0, (LPCTSTR)NULL);
 		menu.AppendMenu(MF_STRING, (UINT_PTR)kCmdOpenSettings, _T("高级设置…"));
 
 		::SetForegroundWindow(m_hWnd);
@@ -601,6 +606,8 @@ namespace {
 			spectrum_open_settings_window(m_hWnd);
 		} else if (cmd == kCmdColorPanel) {
 			spectrum_open_color_window(m_hWnd);
+		} else if (cmd == kCmdSpectrogram) {
+			spectrum_open_spectrogram_window(m_hWnd);
 		} else if (cmd == kCmdOpenSettings) {
 			spectrum_settings_show();
 		}

@@ -279,7 +279,7 @@ namespace {
 				add_tip(mk_label(L"频率下限", xlab1, y, kLabelW), "只显示这个频率以上的频段，单位 Hz。");
 				add_tip(mk_edit(id_freqmin, xctl1, y, wNum),
 					"只显示这个频率以上的频段（20–20000 Hz）。\n"
-					"选定的范围会自动放大铺满整个面板 —— 比如设成 20–200 Hz，256 根柱子就全部用来画低频，细节比全频段清楚得多。");
+					"选定的范围会自动放大铺满整个面板。");
 				mk_label(L"Hz", xunit1, y, kUnitW);
 				add_tip(mk_label(L"频率上限", xlab2, y, kLabelW), "只显示这个频率以下的频段，单位 Hz。");
 				add_tip(mk_edit(id_freqmax, xctl2, y, wNum),

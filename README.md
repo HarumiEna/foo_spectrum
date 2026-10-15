@@ -5,7 +5,9 @@
 foobar2000 的频谱面板。最多 1024 段，渐变、颜色、刻度位置都能自己配，帧率上限 240。
 500 Hz 以下单独走一路 16384 点长窗 FFT，低频不会糊成一片。
 
-[![Stars](https://img.shields.io/github/stars/HarumiEna/foo_spectrum?style=flat-square&label=Stars&color=blue)](https://github.com/HarumiEna/foo_spectrum/stargazers) [![Forks](https://img.shields.io/github/forks/HarumiEna/foo_spectrum?style=flat-square&label=Forks&color=blue)](https://github.com/HarumiEna/foo_spectrum/forks) [![Downloads](https://img.shields.io/github/downloads/HarumiEna/foo_spectrum/total?style=flat-square&label=Downloads&color=green)](https://github.com/HarumiEna/foo_spectrum/releases) [![Version](https://img.shields.io/badge/version-1.12.0-orange?style=flat-square)](https://github.com/HarumiEna/foo_spectrum/releases) [![Platform](https://img.shields.io/badge/platform-Windows%20x64%20%7C%20x86-lightgrey?style=flat-square)](https://github.com/HarumiEna/foo_spectrum/releases)
+另带一个 **Spek 风格的频谱图**：整首曲子画成时间×频率热力图，并给出估计的截止频率。
+
+[![Stars](https://img.shields.io/github/stars/HarumiEna/foo_spectrum?style=flat-square&label=Stars&color=blue)](https://github.com/HarumiEna/foo_spectrum/stargazers) [![Forks](https://img.shields.io/github/forks/HarumiEna/foo_spectrum?style=flat-square&label=Forks&color=blue)](https://github.com/HarumiEna/foo_spectrum/forks) [![Downloads](https://img.shields.io/github/downloads/HarumiEna/foo_spectrum/total?style=flat-square&label=Downloads&color=green)](https://github.com/HarumiEna/foo_spectrum/releases) [![Version](https://img.shields.io/badge/version-1.14.0-orange?style=flat-square)](https://github.com/HarumiEna/foo_spectrum/releases) [![Platform](https://img.shields.io/badge/platform-Windows%20x64%20%7C%20x86-lightgrey?style=flat-square)](https://github.com/HarumiEna/foo_spectrum/releases)
 
 ![经典配色](foo_spectrum/screenshots/01-classic.png)
 ![刻度与网格](foo_spectrum/screenshots/02-scales.png)
@@ -17,19 +19,42 @@ foobar2000 的频谱面板。最多 1024 段，渐变、颜色、刻度位置都
 
 参数设置（`Ctrl+P`）→ 组件 → 安装… → 选中 `.fb2k-component` → 应用 → 按提示重启。
 
-不能双击安装：foobar2000 默认不注册 `.fb2k-component` 关联，双击多半被解压软件接走。
-升级同理，直接安装覆盖，不用先卸载。
+不能双击安装：foobar2000 不注册 `.fb2k-component` 关联。升级直接覆盖，不用先卸载。
 
 ## 使用
 
-菜单 `视图 → 可视化 → 频谱可视化`，双击全屏。想让它常驻成面板：启用布局编辑模式后
-右键面板 → `替换 UI 元素…` → 选「频谱可视化」。
+`视图 → 可视化 → 频谱可视化`，双击全屏。常驻成面板：布局编辑模式下右键面板 →
+`替换 UI 元素…` → 选「频谱可视化」。
 
-面板右键三项：`设置面板…`（分析 / 显示 / 柱体动态 / 刻度）、`颜色设置…`、`高级设置…`。
+面板右键四项：`设置面板…`、`颜色设置…`、`频谱图（判断是否无损）…`、`高级设置…`。
+
+## 频谱图
+
+`视图 → 可视化 → 频谱图（判断是否无损）…`，或频谱面板右键同一项。点 `分析当前曲目`
+或 `打开文件…`。
+
+有损编码会把高频一刀切掉，切在哪由码率决定：
+
+| 截止位置 | 通常对应 |
+| --- | --- |
+| 接近采样率上限（44.1 kHz 时约 22 kHz） | 带宽完整，无损或 320 kbps 级别 |
+| 约 20 kHz | 常见于 320 kbps |
+| 约 18–19 kHz | 常见于 192–256 kbps |
+| 约 16 kHz | 常见于 128 kbps |
+
+**只是提示，不是证据**：母带本身可能就限带，320 kbps 也能顶到 20 kHz 以上。要确定得看形状 ——
+有损在截止处是一条水平切边，而不是自然滚降。
+
+窗口选项（会记住）：
+
+- **频率轴**：线性 / 对数
+- **调色板**：经典（黑→蓝→青→绿→黄→红）/ 热力图（黑→紫→品红→红→橙→黄→白，即 Spek 那套）/ 灰度 / 青蓝
+- **上限**：频率轴顶端。`自动` = 采样率的一半，画面铺满；也可往里裁以放大某一段。
+  列表只列出该文件实际能裁的值 —— 超过奈奎斯特的地方没有数据。
+- **范围**：动态范围 70–160 dB，默认 120（Spek 同色标）
+- **导出 PNG…**：3000×1024
 
 ## 设置
-
-设置面板里每项鼠标悬停都有详细说明。默认值：
 
 | 设置 | 默认 | 设置 | 默认 |
 | --- | --- | --- | --- |
@@ -40,22 +65,17 @@ foobar2000 的频谱面板。最多 1024 段，渐变、颜色、刻度位置都
 | 渐变 | 三色，垂直 | 频谱倾斜 | 0 dB/oct |
 | 低频增强 | 开 | 网格 / 频率刻度 / 电平刻度 | 关 |
 
-**频谱倾斜**：以 1 kHz 为轴心、每倍频程抬高或压低多少 dB（−12 ~ +12）。音乐能量天然
-每倍频程衰减约 6 dB，所以高频柱子天生就矮——填正值把高频抬起来整条曲线就平了。
-它和「增益」不是一回事：增益是全频段统一乘，改不了斜率。实用范围约 ±6。
+**频谱倾斜**：以 1 kHz 为轴心、每倍频程 ±12 dB。音乐每倍频程天然衰减约 6 dB，填正值把高频
+抬起来曲线就平了。它不是「增益」—— 增益是全频段统一乘，改不了斜率。
 
-**频率上下限**不是把区间外留空，而是把选中的区间放大铺满整个面板。
+**频率上下限**是把选中区间放大铺满面板，不是留空。
 
 ## 配色与外观预设
 
-面板右键 → `颜色设置…`。色块旁边标着用途；取色方式可在系统调色板和屏幕吸管之间切换。
+面板右键 → `颜色设置…`。内置 7 组配色：经典绿 / 深海蓝 / 落日火焰 / 彩虹 / 霓虹紫 / 琥珀示波器 / 黑白。
 
-内置 7 组**配色**预设：经典绿 / 深海蓝 / 落日火焰 / 彩虹 / 霓虹紫 / 琥珀示波器 / 黑白。
-
-自定义预设存的是**整套外观**（最多 32 个）：颜色、显示样式、不透明度、柱间空隙、渐变、
-dB 刻度、对数轴、网格、两个刻度的位置、频谱倾斜。老版本存的预设仍然可用，只是仍按配色套用。
+自定义预设存**整套外观**（最多 32 个）。老版本存的预设仍可用。
 
 ## 配置文件
 
-设置面板底部可以把整份设置导出 / 导入成 `.ini` 文本，方便备份和分享。
-没写到的项保持当前值，越界值自动收敛到合法范围。
+设置面板底部可导出 / 导入 `.ini`。没写到的项保持当前值，越界值自动收敛。

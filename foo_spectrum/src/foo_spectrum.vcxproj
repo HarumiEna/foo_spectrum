@@ -184,6 +184,8 @@
     <ClCompile Include="screen_picker.cpp" />
     <ClCompile Include="settings.cpp" />
     <ClCompile Include="settings_dialog.cpp" />
+    <ClCompile Include="spectrogram.cpp" />
+    <ClCompile Include="spectrogram_dialog.cpp" />
     <ClCompile Include="spectrum_element.cpp" />
     <ClCompile Include="PCH.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -197,6 +199,8 @@
     <ClInclude Include="screen_picker.h" />
     <ClInclude Include="settings.h" />
     <ClInclude Include="settings_dialog.h" />
+    <ClInclude Include="spectrogram.h" />
+    <ClInclude Include="spectrogram_dialog.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="ui_theme.h" />
   </ItemGroup>
